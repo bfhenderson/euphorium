@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Euphonium Fingering Practice</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+        }
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #fff;
+        }
+        #startButton, #playAgainButton {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 18px;
+        }
+        #startButton {
+            top: 90%;
+        }
+        #playAgainButton {
+            top: 50%;
+        }
+        #timer, #score {
+            position: absolute;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+        }
+        #timer {
+            top: 10px;
+            left: 10px;
+        }
+        #score {
+            top: 40px;
+            left: 10px;
+        }
+        #fingeringDisplay {
+            position: absolute;
+            top: 400px;
+            left: 100px;
+            font-size: 24px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="timer"></div>
+    <div id="score"></div>
+    <div id="fingeringDisplay"></div>
+    <button id="startButton">Start</button>
+    <button id="playAgainButton" style="display:none;">Play Again</button>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const timerDisplay = document.getElementById('timer');
+        const scoreDisplay = document.getElementById('score');
+        const fingeringDisplay = document.getElementById('fingeringDisplay');
+        const startButton = document.getElementById('startButton');
+        const playAgainButton = document.getElementById('playAgainButton');
+
+        let gameStarted = false;
+        let gameOver = false;
+        let waitingForInput = false;
+        let showingCorrectFingering = false;
+        let inputKeys = [];
+        let firstKeyTime = null;
+        const inputWindow = 250; // in milliseconds
+        let timerStart = null;
+        const timerDuration = 60; // in seconds
+        let currentNote = null;
+        let score = 0;
+        let correctFingeringStartTime = null;
+        let timeLeft = timerDuration * 1000;
+
+        const keyMapping = {
+            ' ': 'open',
+            'j': '1',
+            'k': '2',
+            'l': '3',
+            ';': '4',
+            "'": ';', // For some keyboards
+        };
+
+        class Note {
+            constructor(name, positionIndex, fingering, frequency) {
+                this.name = name;
+                this.positionIndex = positionIndex;
+                this.fingering = fingering;
+                this.frequency = frequency;
+            }
+        }
+
+        const notes = [
+            /*
+            new Note('Bb2', -8, ['J'], 116.54),
+            new Note('C3', -7, ['A'], 130.81),
+            new Note('D3', -6, ['J', 'K'], 146.83),
+            new Note('E3', -5, ['K'], 164.81),
+            new Note('F3', -4, ['A'], 174.61),
+            new Note('G3', -3, ['J', 'K'], 196.00),
+            new Note('A3', -2, ['K'], 220.00),
+            */
+            new Note('Bb3', -2, ['open'], 233.08),
+            new Note('C4', -1, ['4'], 261.63),
+            new Note('D4', 0, ['1','2'], 293.66),
+            new Note('Eb4', 1, ['1'], 329.63),
+            new Note('F4', 2, ['open'], 349.23),
+            new Note('G4', 3, ['1', '2'], 392.00),
+            /*
+            new Note('A4', 5, ['K', 'L'], 440.00),
+            new Note('Bb4', 6, ['L'], 466.16),
+            new Note('C5', 7, ['A'], 523.25),
+            */
+        ];
+
+        const lineSpacing = 20;
+        const staffTop = 200;
+        const staffBottom = staffTop + 4 * lineSpacing; // 5 lines, so 4 spaces
+
+        function drawStaff() {
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 5; i++) {
+                const y = staffTop + i * lineSpacing;
+                ctx.beginPath();
+                ctx.moveTo(100, y);
+                ctx.lineTo(700, y);
+                ctx.stroke();
+            }
+        }
+
+        function getNoteY(positionIndex) {
+            const staffMiddleLineY = staffTop + 2 * lineSpacing; // Line 3 (middle line)
+            const y = staffMiddleLineY - positionIndex * (lineSpacing / 2);
+            return y;
+        }
+
+        function drawNote(positionIndex) {
+            const x = 400; // Center of the staff
+            const y = getNoteY(positionIndex);
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.ellipse(x, y, 10, 5, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            // Draw ledger lines if necessary
+            if (positionIndex < -4 || positionIndex > 4) {
+                const numLedgerLines = Math.floor((Math.abs(positionIndex) - 4) / 2) + 1;
+                for (let i = 0; i < numLedgerLines; i++) {
+                    let ledgerY;
+                    if (positionIndex < -4) {
+                        ledgerY = staffBottom + (i + 1) * lineSpacing;
+                    } else {
+                        ledgerY = staffTop - (i + 1) * lineSpacing;
+                    }
+                    ctx.beginPath();
+                    ctx.moveTo(x - 20, ledgerY);
+                    ctx.lineTo(x + 20, ledgerY);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        // Audio context for sound synthesis
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+
+        function playNoteSound(frequency) {
+            const oscillator = audioCtx.createOscillator();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playIncorrectSound() {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+
+            lfo.frequency.setValueAtTime(5, audioCtx.currentTime); // Modulation frequency
+            lfoGain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(gainNode.gain);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            lfo.start();
+            oscillator.start();
+
+            oscillator.stop(audioCtx.currentTime + 0.5);
+            lfo.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function startGame() {
+            gameStarted = true;
+            gameOver = false;
+            score = 0;
+            timeLeft = timerDuration * 1000;
+            timerStart = performance.now();
+            currentNote = notes[Math.floor(Math.random() * notes.length)];
+            waitingForInput = true;
+            inputKeys = [];
+            firstKeyTime = null;
+            startButton.style.display = 'none';
+            playAgainButton.style.display = 'none';
+            fingeringDisplay.textContent = '';
+            gameLoop();
+        }
+
+        function endGame() {
+            gameStarted = false;
+            gameOver = true;
+            playAgainButton.style.display = 'block';
+            fingeringDisplay.textContent = '';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.font = '24px Arial';
+            ctx.fillStyle = '#000';
+            ctx.fillText(`Your Score: ${score}`, canvas.width / 2 - 60, canvas.height / 2 - 20);
+        }
+
+        function gameLoop() {
+            if (!gameStarted) return;
+            const now = performance.now();
+            timeLeft = timerDuration * 1000 - (now - timerStart);
+
+            if (timeLeft <= 0) {
+                endGame();
+                return;
+            }
+
+            timerDisplay.textContent = `Time: ${Math.ceil(timeLeft / 1000)}`;
+            scoreDisplay.textContent = `Score: ${score}`;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawStaff();
+            drawNote(currentNote.positionIndex);
+
+            if (showingCorrectFingering) {
+                if (now - correctFingeringStartTime >= 2000) {
+                    // 2 seconds have passed
+                    showingCorrectFingering = false;
+                    waitingForInput = true;
+                    currentNote = notes[Math.floor(Math.random() * notes.length)];
+                    fingeringDisplay.textContent = '';
+                } else {
+                    // Display correct fingering
+                    fingeringDisplay.textContent = `Correct Fingering: ${currentNote.fingering.join(' + ')}`;
+                }
+            } else if (firstKeyTime !== null && now - firstKeyTime >= inputWindow) {
+                // Input window has passed
+                const expectedFingering = currentNote.fingering.slice().sort();
+                const userFingering = inputKeys.slice().sort();
+
+                if (JSON.stringify(expectedFingering) === JSON.stringify(userFingering)) {
+                    // Correct
+                    playNoteSound(currentNote.frequency);
+                    score++;
+                    currentNote = notes[Math.floor(Math.random() * notes.length)];
+                    waitingForInput = true;
+                    inputKeys = [];
+                    firstKeyTime = null;
+                    fingeringDisplay.textContent = '';
+                } else {
+                    // Incorrect
+                    playIncorrectSound();
+                    showingCorrectFingering = true;
+                    correctFingeringStartTime = now;
+                    waitingForInput = false;
+                    inputKeys = [];
+                    firstKeyTime = null;
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (gameStarted && waitingForInput && !showingCorrectFingering) {
+                const keyName = keyMapping[event.key.toLowerCase()];
+                if (keyName) {
+                    if (firstKeyTime === null) {
+                        firstKeyTime = performance.now();
+                    }
+                    if (!inputKeys.includes(keyName)) {
+                        inputKeys.push(keyName);
+                    }
+                }
+            }
+        });
+
+        startButton.addEventListener('click', () => {
+            startGame();
+        });
+
+        playAgainButton.addEventListener('click', () => {
+            startGame();
+        });
+    </script>
+</body>
+</html>
+
