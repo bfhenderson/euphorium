@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Euphonium Fingering Practice</title>
+    <!-- Include VexFlow Library -->
+    <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+    <!--<script src="https://unpkg.com/vexflow/releases/vexflow-min.js"></script>-->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #staff {
+            border: 1px solid #ccc;
+            width: 600px;
+            height: 200px;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        #timer {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #score {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #message {
+            font-size: 20px;
+            color: red;
+        }
+        #game {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <label for="keySignature">Key Signature:</label>
+        <select id="keySignature">
+            <option value="C">C Major / A minor</option>
+            <option value="F">F Major / D minor</option>
+            <option value="Bb">Bb Major / G minor</option>
+            <option value="Eb">Eb Major / C minor</option>
+            <option value="Ab">Ab Major / F minor</option>
+            <option value="Db">Db Major / Bb minor</option>
+        </select>
+
+        <label for="noteRange">Note Range:</label>
+        <select id="noteRange">
+            <option value="low">Low (F2 to Bb2)</option>
+            <option value="mid">Middle (C3 to Bb3)</option>
+            <option value="high">High (C4 to Bb4)</option>
+            <option value="full">Full Range (F2 to Bb4)</option>
+        </select>
+
+        <button id="startButton">Start</button>
+    </div>
+
+    <div id="game">
+        <div id="timer">Time: 60</div>
+        <canvas id="staff" width="600" height="200"></canvas>
+        <div id="message"></div>
+        <div id="score">Score: 0</div>
+    </div>
+
+    <!-- Include the JavaScript file -->
+    <script src="euphonium8.js"></script>
+</body>
+</html>
+
