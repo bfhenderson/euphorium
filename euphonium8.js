@@ -314,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const chromaticPossibilities = ranges[noteRange];
         const possibleNotes = filterNotesByKeySignature(keySignature, chromaticPossibilities);
         currentNote = possibleNotes[Math.floor(Math.random() * possibleNotes.length)];
+        console.log(currentNote, noteFingerings[currentNote]);
         drawNote();
         keyPressed = [];
         noteStartTime = null;
@@ -362,6 +363,7 @@ document.addEventListener('DOMContentLoaded', () => {
             keyPressed.push('4');
         } else if (key === ' ' && !keyPressed.includes('0')) {
             keyPressed.push('0');
+            event.preventDefault();
         }
 
         if (startLength === 0 && keyPressed.length > 0 && noteStartTime === null) {
