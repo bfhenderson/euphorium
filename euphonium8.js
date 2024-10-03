@@ -4,35 +4,35 @@ const noteFingerings = {
     'F2': ['4'],
     'F#2': ['2','3'],
     'G2': ['1','2'],
-    'G#2': ['1'],
+    'Ab2': ['1'],
     'A2': ['2'],
     'Bb2': ['0'],
     'B2': ['2', '4'],
 
     // Middle range C3 to Bb3
     'C3': ['4'],
-    'C#3': ['2','3'],
+    'Db3': ['2','3'],
     'D3': ['1','2'],
     'Eb3': ['1'],
     'E3': ['2'],
     'F3': ['0'],
-    'F#3': ['2','3'],
+    'Gb3': ['2','3'],
     'G3': ['1','2'],
-    'G#3': ['1'],
+    'Ab3': ['1'],
     'A3': ['2'],
     'Bb3': ['0'],
     'B3': ['1','2'],
 
     // High range C4 to Bb4
     'C4': ['1'],
-    'C#4': ['2'],
+    'Db4': ['2'],
     'D4': ['0'],
     'Eb4': ['1'],
     'E4': ['2'],
     'F4': ['0'],
-    'F#4': ['2', '3'],
+    'Gb4': ['2', '3'],
     'G4': ['1','2'],
-    'G#4': ['1'],
+    'Ab4': ['1'],
     'A4': ['2'],
     'Bb4': ['0']
 };
@@ -48,33 +48,33 @@ const ranges = {
 // Mapping of note names to frequencies (in Hz)
 const noteFrequencies = {
     'F2': 87.31,
-    'F#2': 92.50,
+    'Gb2': 92.50,
     'G2': 98.00,
-    'G#2': 103.83,
+    'Ab2': 103.83,
     'A2': 110.00,
     'Bb2': 116.54,
     'B2': 123.47,
     'C3': 130.81,
-    'C#3': 138.59,
+    'Db3': 138.59,
     'D3': 146.83,
     'Eb3': 155.56,
     'E3': 164.81,
     'F3': 174.61,
-    'F#3': 185.00,
+    'Gb3': 185.00,
     'G3': 196.00,
-    'G#3': 207.65,
+    'Ab3': 207.65,
     'A3': 220.00,
     'Bb3': 233.08,
     'B3': 246.94,
     'C4': 261.63,
-    'C#4': 277.18,
+    'Db4': 277.18,
     'D4': 293.66,
     'Eb4': 311.13,
     'E4': 329.63,
     'F4': 349.23,
-    'F#4': 369.99,
+    'Gb4': 369.99,
     'G4': 392.00,
-    'G#4': 415.30,
+    'Ab4': 415.30,
     'A4': 440.00,
     'Bb4': 466.16
 };
@@ -233,7 +233,7 @@ function filterNotesByKeySignature(keySignature, notesArray) {
         const octave = match[2]; // May be empty
         const normalizedNoteName = normalizeNoteName(noteName, preferAccidental);
         if (diatonicScale.includes(normalizedNoteName)) {
-            result.push(noteWithOctave);
+            result.push(`${normalizedNoteName}${octave}`);
         }
     }
     return result;
@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const chromaticPossibilities = ranges[noteRange];
         const possibleNotes = filterNotesByKeySignature(keySignature, chromaticPossibilities);
         currentNote = possibleNotes[Math.floor(Math.random() * possibleNotes.length)];
-        console.log(currentNote, noteFingerings[currentNote]);
+        //console.log(currentNote, noteFingerings[currentNote]);
         drawNote();
         keyPressed = [];
         noteStartTime = null;
@@ -330,6 +330,8 @@ document.addEventListener('DOMContentLoaded', () => {
         stave.setContext(context).draw();
         const vfkey = convertToVexflowKey(currentNote);
         const note = new VF.StaveNote({ clef: 'bass', keys: [vfkey], duration: 'q' });
+        // we need to add this back if we support accidentals inside the scale, or for the chromatic scale but for 
+        // these normal scales this is redundant to the key signature
         if (currentNote.includes('#')) {
             note.addModifier(new VF.Accidental('#'));
         } else if (currentNote.includes('b')) {
@@ -373,6 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function evaluateAnswer() {
+        // TODO noteFingerings use flat accidentals and the current note could be in a sharp preferred key
         const correctFingering = noteFingerings[currentNote];
         keyPressed.sort();
         correctFingering.sort();
