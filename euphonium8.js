@@ -25,18 +25,16 @@ const noteFingerings = {
 
     // High range C4 to Bb4
     48: ['1'],
-    /*
-    'Db4': ['2'],
-    'D4': ['0'],
-    'Eb4': ['1'],
-    'E4': ['2'],
-    'F4': ['0'],
-    'Gb4': ['2', '3'],
-    'G4': ['1','2'],
-    'Ab4': ['1'],
-    'A4': ['2'],
-    'Bb4': ['0']
-    */
+    49: ['2'],
+    50: ['0'],
+    51: ['1'],
+    52: ['2'],
+    53: ['0'],
+    54: ['2', '3'],
+    55: ['1','2'],
+    56: ['1'],
+    57: ['2'],
+    58: ['0']
 };
 
 // List of possible notes in each range
@@ -69,18 +67,16 @@ const noteFrequencies = {
     46: 233.08,
     47: 246.94,
     48: 261.63,         // C4
-    /*
-    'Db4': 277.18,
-    'D4': 293.66,
-    'Eb4': 311.13,
-    'E4': 329.63,
-    'F4': 349.23,
-    'Gb4': 369.99,
-    'G4': 392.00,
-    'Ab4': 415.30,
-    'A4': 440.00,
-    'Bb4': 466.16
-    */
+    49: 277.18,
+    50: 293.66,
+    51: 311.13,
+    52: 329.63,
+    53: 349.23,
+    54: 369.99,
+    55: 392.00,
+    56: 415.30,
+    57: 440.00,
+    58: 466.16
 };
 
 const noteSemitoneMap = {
@@ -478,10 +474,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showCorrectFingering() {
-        messageDisplay.textContent = 'Incorrect. Correct fingering: ' + noteFingerings[noteToMidi(currentNote)].join('-');
+        messageDisplay.textContent = currentNote + ' fingering: ' + noteFingerings[noteToMidi(currentNote)].join('-');
         setTimeout(() => {
             messageDisplay.textContent = '';
-        }, 2000);
+        }, 3000);
     }
 });
 
