@@ -1,30 +1,31 @@
 // Mapping of notes to fingerings
 const noteFingerings = {
     // Low range F2 to Bb2
-    'F2': ['4'],
-    'F#2': ['2','3'],
-    'G2': ['1','2'],
-    'Ab2': ['1'],
-    'A2': ['2'],
-    'Bb2': ['0'],
-    'B2': ['2', '4'],
+    29: ['4'],
+    30: ['2','3'],
+    31: ['1','2'],
+    32: ['1'],
+    33: ['2'],
+    34: ['0'],
+    35: ['2', '4'],
 
     // Middle range C3 to Bb3
-    'C3': ['4'],
-    'Db3': ['2','3'],
-    'D3': ['1','2'],
-    'Eb3': ['1'],
-    'E3': ['2'],
-    'F3': ['0'],
-    'Gb3': ['2','3'],
-    'G3': ['1','2'],
-    'Ab3': ['1'],
-    'A3': ['2'],
-    'Bb3': ['0'],
-    'B3': ['1','2'],
+    36: ['4'],
+    37: ['2','3'],
+    38: ['1','2'],
+    39: ['1'],
+    40: ['2'],
+    41: ['0'],
+    42: ['2','3'],
+    43: ['1','2'],
+    44: ['1'],
+    45: ['2'],
+    46: ['0'],
+    47: ['1','2'],
 
     // High range C4 to Bb4
-    'C4': ['1'],
+    48: ['1'],
+    /*
     'Db4': ['2'],
     'D4': ['0'],
     'Eb4': ['1'],
@@ -35,6 +36,7 @@ const noteFingerings = {
     'Ab4': ['1'],
     'A4': ['2'],
     'Bb4': ['0']
+    */
 };
 
 // List of possible notes in each range
@@ -47,26 +49,27 @@ const ranges = {
 
 // Mapping of note names to frequencies (in Hz)
 const noteFrequencies = {
-    'F2': 87.31,
-    'Gb2': 92.50,
-    'G2': 98.00,
-    'Ab2': 103.83,
-    'A2': 110.00,
-    'Bb2': 116.54,
-    'B2': 123.47,
-    'C3': 130.81,
-    'Db3': 138.59,
-    'D3': 146.83,
-    'Eb3': 155.56,
-    'E3': 164.81,
-    'F3': 174.61,
-    'Gb3': 185.00,
-    'G3': 196.00,
-    'Ab3': 207.65,
-    'A3': 220.00,
-    'Bb3': 233.08,
-    'B3': 246.94,
-    'C4': 261.63,
+    29: 87.31,          // F2
+    30: 92.50,
+    31: 98.00,
+    32: 103.83,
+    33: 110.00,
+    34: 116.54,
+    35: 123.47,
+    36: 130.81,         // C3
+    37: 138.59,
+    38: 146.83,
+    39: 155.56,
+    40: 164.81,
+    41: 174.61,
+    42: 185.00,
+    43: 196.00,
+    44: 207.65,
+    45: 220.00,
+    46: 233.08,
+    47: 246.94,
+    48: 261.63,         // C4
+    /*
     'Db4': 277.18,
     'D4': 293.66,
     'Eb4': 311.13,
@@ -77,36 +80,54 @@ const noteFrequencies = {
     'Ab4': 415.30,
     'A4': 440.00,
     'Bb4': 466.16
+    */
 };
+
+const noteSemitoneMap = {
+    'C': 0,
+    'C#': 1, 'Db': 1,
+    'D': 2,
+    'D#': 3, 'Eb': 3,
+    'E': 4,
+    'F': 5,
+    'F#': 6, 'Gb': 6,
+    'G': 7,
+    'G#': 8, 'Ab': 8,
+    'A': 9,
+    'A#': 10, 'Bb': 10,
+    'B': 11
+};
+
+// (0-96ish) based on note name and octave, or null if an invalid note.
+/**
+ * Converts a note to its corresponding midi pitch.
+ * @param {string} note - The note name (e.g., 'C#4', 'Eb2', 'F3').
+ * @returns {number|null} - Semitone number (0-96ish) 
+ * */
+function noteToMidi(note) {
+    const match = note.match(/^([A-G][#b]?)([0-8]{1})/);
+    if (match === null) {
+        return null;
+    }
+    const semitone = noteSemitoneMap[match[1]];
+    if (semitone === undefined) {
+        return null;
+    }
+    // octave
+    return semitone + Number(match[2]) * 12;
+}
 
 /**
  * Converts a note name to its corresponding semitone number.
  * @param {string} noteName - The note name (e.g., 'C#', 'Eb', 'F').
- * @returns {number|null} - Semitone number (0-11) or null if invalid note.
- */
+ * @returns {number|null} - Semitone number (0-11) 
+ * */
 function noteNameToSemitone(noteName) {
-    const noteSemitoneMap = {
-        'C': 0,
-        'C#': 1, 'Db': 1,
-        'D': 2,
-        'D#': 3, 'Eb': 3,
-        'E': 4,
-        'F': 5,
-        'F#': 6, 'Gb': 6,
-        'G': 7,
-        'G#': 8, 'Ab': 8,
-        'A': 9,
-        'A#': 10, 'Bb': 10,
-        'B': 11
-    };
-    // Extract the note without octave
-    const match = noteName.match(/^([A-G][#b]?)/);
-    if (match) {
-        const note = match[1];
-        return noteSemitoneMap[note] !== undefined ? noteSemitoneMap[note] : null;
-    } else {
+    const semitone = noteSemitoneMap[noteName];
+    if (semitone === undefined) {
         return null;
     }
+    return semitone;
 }
 
 /**
@@ -230,7 +251,7 @@ function filterNotesByKeySignature(keySignature, notesArray) {
             continue; // Invalid note format
         }
         const noteName = match[1];
-        const octave = match[2]; // May be empty
+        const octave = match[2];
         const normalizedNoteName = normalizeNoteName(noteName, preferAccidental);
         if (diatonicScale.includes(normalizedNoteName)) {
             result.push(`${normalizedNoteName}${octave}`);
@@ -375,8 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function evaluateAnswer() {
-        // TODO noteFingerings use flat accidentals and the current note could be in a sharp preferred key
-        const correctFingering = noteFingerings[currentNote];
+        let midiNum = noteToMidi(currentNote);
+        const correctFingering = noteFingerings[midiNum];
         keyPressed.sort();
         correctFingering.sort();
 
@@ -385,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isCorrect) {
             score++;
             scoreDisplay.textContent = 'Score: ' + score;
-            playNoteSound(currentNote);
+            playNoteSound(midiNum);
             setTimeout(generateNewNote, 500);
         } else {
             playErrorSound();
@@ -398,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return JSON.stringify(a) === JSON.stringify(b);
     }
 
-    function playNoteSound(note) {
+    function playNoteSound(midiNum) {
         if (oscillator) {
             oscillator.stop();
         }
@@ -406,7 +427,7 @@ document.addEventListener('DOMContentLoaded', () => {
         context = new (window.AudioContext || window.webkitAudioContext)();
         oscillator = context.createOscillator();
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(noteFrequencies[note], context.currentTime);
+        oscillator.frequency.setValueAtTime(noteFrequencies[midiNum], context.currentTime);
         oscillator.connect(context.destination);
         oscillator.start();
         setTimeout(() => {
@@ -457,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showCorrectFingering() {
-        messageDisplay.textContent = 'Incorrect. Correct fingering: ' + noteFingerings[currentNote].join('-');
+        messageDisplay.textContent = 'Incorrect. Correct fingering: ' + noteFingerings[noteToMidi(currentNote)].join('-');
         setTimeout(() => {
             messageDisplay.textContent = '';
         }, 2000);
