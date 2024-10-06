@@ -1,6 +1,10 @@
 // Mapping of notes to fingerings
 const noteFingerings = {
-    // Low range F2 to Bb2
+    24: ['1','3','4'], //C2 // TODO this only for compensating
+    25: ['2','3','4'],      // TODO this only for compensating
+    26: ['1','2','4'],        //TODO this only for compensating
+    27: ['1','4'],          // TODO this only for compensating
+    28: ['2','4'],
     29: ['4'],
     30: ['2','3'],
     31: ['1','2'],
@@ -8,9 +12,7 @@ const noteFingerings = {
     33: ['2'],
     34: ['0'],
     35: ['2', '4'],
-
-    // Middle range C3 to Bb3
-    36: ['4'],
+    36: ['4'],          //C3
     37: ['2','3'],
     38: ['1','2'],
     39: ['1'],
@@ -22,9 +24,7 @@ const noteFingerings = {
     45: ['2'],
     46: ['0'],
     47: ['1','2'],
-
-    // High range C4 to Bb4
-    48: ['1'],
+    48: ['1'],          //C4
     49: ['2'],
     50: ['0'],
     51: ['1'],
@@ -37,47 +37,33 @@ const noteFingerings = {
     58: ['0']
 };
 
-// List of possible notes in each range
+// low and high midi notes (inclusive) in each skill range
 const ranges = {
-    'low': ['F2','F#2','G2','G#2','A2','Bb2','B2'],
-    'mid': ['C3','C#3','D3','Eb3','E3','F3','F#3','G3','G#3','A3','Bb3'],
-    'high': ['C4','C#4','D4','Eb4','E4','F4','F#4','G4','G#4','A4','Bb4'],
-    'full': ['F2','F#2','G2','G#2','A2','Bb2','B2','C3','C#3','D3','Eb3','E3','F3','F#3','G3','G#3','A3','Bb3','C4','C#4','D4','Eb4','E4','F4','F#4','G4','G#4','A4','Bb4']
+    'novice': [34,46],
+    'beginner': [32, 50],
+    'intermediate': [29, 53],
+    'advanced': [29,58]
 };
 
-// Mapping of note names to frequencies (in Hz)
-const noteFrequencies = {
-    29: 87.31,          // F2
-    30: 92.50,
-    31: 98.00,
-    32: 103.83,
-    33: 110.00,
-    34: 116.54,
-    35: 123.47,
-    36: 130.81,         // C3
-    37: 138.59,
-    38: 146.83,
-    39: 155.56,
-    40: 164.81,
-    41: 174.61,
-    42: 185.00,
-    43: 196.00,
-    44: 207.65,
-    45: 220.00,
-    46: 233.08,
-    47: 246.94,
-    48: 261.63,         // C4
-    49: 277.18,
-    50: 293.66,
-    51: 311.13,
-    52: 329.63,
-    53: 349.23,
-    54: 369.99,
-    55: 392.00,
-    56: 415.30,
-    57: 440.00,
-    58: 466.16
-};
+function midiToFrequency(midiPitch) {
+    const noteFrequencies = {
+        0: 261.63, // C4
+        1: 277.18,
+        2: 293.66, // D4
+        3: 311.13,
+        4: 329.63, // E4
+        5: 349.23, // F4
+        6: 369.99,
+        7: 392.00, // G4
+        8: 415.30,
+        9: 440.00, // A4
+        10: 466.16,
+        11: 493.88 // B4
+    };
+    const octave = Math.floor(midiPitch / 12);
+    const octaveMultiple = Math.pow(2, octave - 4);
+    return noteFrequencies[midiPitch % 12] * octaveMultiple; 
+}
 
 const noteSemitoneMap = {
     'C': 0,
@@ -129,11 +115,11 @@ function noteNameToSemitone(noteName) {
 /**
  * Converts a semitone number to its corresponding note name, preferring sharps or flats.
  * @param {number} semitone - Semitone number (0-11).
- * @param {string} preferAccidental - 'sharps' or 'flats'.
- * @returns {string} - The note name.
+ * @param {string} preferAccidental - 'sharp' or 'flat'.
+ * @returns [{string} noteName, {Number} octave] - The note name and octave.
  */
-function semitoneToNoteName(semitone, preferAccidental) {
-    const semitoneToNoteNameSharps = {
+function midiToVexFlow(semitone, preferredAccidental='flat') {
+    const lookup = {'sharp': {
         0: 'C',
         1: 'C#',
         2: 'D',
@@ -146,8 +132,7 @@ function semitoneToNoteName(semitone, preferAccidental) {
         9: 'A',
         10: 'A#',
         11: 'B'
-    };
-    const semitoneToNoteNameFlats = {
+    }, 'flat': {
         0: 'C',
         1: 'Db',
         2: 'D',
@@ -160,15 +145,9 @@ function semitoneToNoteName(semitone, preferAccidental) {
         9: 'A',
         10: 'Bb',
         11: 'B'
-    };
-    semitone = ((semitone % 12) + 12) % 12; // Ensure semitone is between 0 and 11
-    if (preferAccidental === 'sharps') {
-        return semitoneToNoteNameSharps[semitone];
-    } else if (preferAccidental === 'flats') {
-        return semitoneToNoteNameFlats[semitone];
-    } else {
-        return semitoneToNoteNameSharps[semitone]; // Default to sharps
-    }
+    }};
+    const octave = Math.floor(semitone / 12);
+    return lookup[preferredAccidental][semitone % 12] + '/' + String(octave);
 }
 
 /**
@@ -178,41 +157,24 @@ function semitoneToNoteName(semitone, preferAccidental) {
  */
 function getAccidentalPreference(keySignature) {
     const flatKeys = ['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'];
-    const sharpKeys = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#'];
+    //const sharpKeys = ['G', 'D', 'A', 'E', 'B', 'F#', 'C#'];
     if (flatKeys.includes(keySignature)) {
-        return 'flats';
-    } else if (sharpKeys.includes(keySignature)) {
-        return 'sharps';
+        return 'flat';
     } else {
-        return 'sharps'; // Default to sharps for 'C' major
+        return 'sharp';
     }
-}
-
-/**
- * Normalizes a note name to a canonical form, handling enharmonic equivalents.
- * @param {string} noteName - The note name to normalize (e.g., 'A#', 'Bb').
- * @param {string} preferAccidental - 'sharps' or 'flats'.
- * @returns {string|null} - Normalized note name or null if invalid.
- */
-function normalizeNoteName(noteName, preferAccidental) {
-    const semitone = noteNameToSemitone(noteName);
-    if (semitone === null) {
-        return null;
-    }
-    return semitoneToNoteName(semitone, preferAccidental);
 }
 
 /**
  * Generates the diatonic scale for a given key signature.
  * @param {string} keySignature - The key signature (e.g., 'Bb', 'C', 'F#').
- * @returns {string[]|null} - Array of note names in the scale or null if invalid key.
+ * @returns {string} - Array of semitones in the scale
  */
 function getDiatonicScale(keySignature) {
     const majorScaleIntervals = [2, 2, 1, 2, 2, 2, 1];
-    const preferAccidental = getAccidentalPreference(keySignature);
     const tonicSemitone = noteNameToSemitone(keySignature);
     if (tonicSemitone === null) {
-        return null;
+        return [];
     }
     let scaleSemitones = [tonicSemitone];
     let currentSemitone = tonicSemitone;
@@ -220,45 +182,38 @@ function getDiatonicScale(keySignature) {
         currentSemitone = (currentSemitone + majorScaleIntervals[i]) % 12;
         scaleSemitones.push(currentSemitone);
     }
-    // Map semitone numbers to note names
-    const diatonicScale = scaleSemitones.map(semitone =>
-        semitoneToNoteName(semitone, preferAccidental)
-    );
-    return diatonicScale;
+    return scaleSemitones;
 }
 
 /**
- * Filters an array of notes, returning only those in the specified key signature.
+ * Produce an array of notes in the specified key signature.
  * @param {string} keySignature - The key signature (e.g., 'Bb', 'G').
- * @param {string[]} notesArray - Array of note names with octaves (e.g., ['F2', 'G#3']).
- * @returns {string[]} - Array of notes that are in the key signature.
+ * @param {Number} beginMidi - first note
+ * @param {Number} - endMidi - last note (inclusive)
+ * @returns {Number[]} - Array of semitones
  */
-function filterNotesByKeySignature(keySignature, notesArray) {
-    const diatonicScale = getDiatonicScale(keySignature);
-    if (diatonicScale === null) {
-        return [];
-    }
-    const preferAccidental = getAccidentalPreference(keySignature);
-    const result = [];
-    for (const noteWithOctave of notesArray) {
-        // Extract note name and octave
-        const match = noteWithOctave.match(/^([A-G][#b]?)(\d*)$/);
-        if (!match) {
-            continue; // Invalid note format
+function midiByKeySignature(keySignature, beginMidi, endMidi) {
+    let scale;
+    if (keySignature === 'chromatic') {
+        scale = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    } else {
+        scale = getDiatonicScale(keySignature);
+        if (scale === null) {
+            return [];
         }
-        const noteName = match[1];
-        const octave = match[2];
-        const normalizedNoteName = normalizeNoteName(noteName, preferAccidental);
-        if (diatonicScale.includes(normalizedNoteName)) {
-            result.push(`${normalizedNoteName}${octave}`);
+    }
+    const result = [];
+    for (let note = beginMidi; note <= endMidi; note++) {
+        if (scale.includes(note % 12)) {
+            result.push(note);
         }
     }
     return result;
 }
 
 
-let keySignature = 'C';
-let noteRange = 'full';
+let keySignature = 'Bb';
+let noteRange = 'intermediate';
 let currentNote = null;
 let timer = 60;
 let score = 0;
@@ -328,31 +283,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function generateNewNote() {
-        const chromaticPossibilities = ranges[noteRange];
-        const possibleNotes = filterNotesByKeySignature(keySignature, chromaticPossibilities);
+        const range = ranges[noteRange];
+        const possibleNotes = midiByKeySignature(keySignature, range[0], range[1] + 1);
         currentNote = possibleNotes[Math.floor(Math.random() * possibleNotes.length)];
-        //console.log(currentNote, noteFingerings[currentNote]);
-        drawNote();
+        console.log(currentNote, noteFingerings[currentNote]);
+        drawNote(currentNote);
         keyPressed = [];
         noteStartTime = null;
     }
 
-    function drawNote() {
+    function drawNote(midiPitch) {
+        
         const VF = Vex.Flow;
         const renderer = new VF.Renderer(staffCanvas, VF.Renderer.Backends.CANVAS);
         const context = renderer.getContext();
         context.clearRect(0, 0, staffCanvas.width, staffCanvas.height);
         const stave = new VF.Stave(10, 40, 500);
-        stave.addClef('bass').addKeySignature(keySignature);
+        stave.addClef('bass').addKeySignature(keySignature === 'chromatic' ? 'C' : keySignature);
         stave.setContext(context).draw();
-        const vfkey = convertToVexflowKey(currentNote);
+        const vfkey = midiToVexFlow(midiPitch, getAccidentalPreference(keySignature));
         const note = new VF.StaveNote({ clef: 'bass', keys: [vfkey], duration: 'q' });
-        // we need to add this back if we support accidentals inside the scale, or for the chromatic scale but for 
-        // these normal scales this is redundant to the key signature
-        if (currentNote.includes('#')) {
-            note.addModifier(new VF.Accidental('#'));
-        } else if (currentNote.includes('b')) {
-            note.addModifier(new VF.Accidental('b'));
+        if (keySignature === 'chromatic') {
+            if (vfkey.includes('#')) {
+                note.addModifier(new VF.Accidental('#'));
+            } else if (vfkey.includes('b')) {
+                note.addModifier(new VF.Accidental('b'));
+            }
         }
 
         const voice = new VF.Voice({ num_beats: 1, beat_value: 4 });
@@ -362,10 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         voice.draw(context, stave);
     }
 
-    function convertToVexflowKey(note) {
-        let octave = note.slice(-1);
-        let pitch = note.slice(0, -1);
-        //pitch = pitch.replace('b', '/flat').replace('#', '/sharp');
+    function convertToVexflowKey(noteName, octave) {
         return pitch + '/' + octave;
     }
 
@@ -392,8 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function evaluateAnswer() {
-        let midiNum = noteToMidi(currentNote);
-        const correctFingering = noteFingerings[midiNum];
+        const correctFingering = noteFingerings[currentNote];
         keyPressed.sort();
         correctFingering.sort();
 
@@ -402,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isCorrect) {
             score++;
             scoreDisplay.textContent = 'Score: ' + score;
-            playNoteSound(midiNum);
+            playNoteSound(currentNote);
             setTimeout(generateNewNote, 500);
         } else {
             playErrorSound();
@@ -415,7 +367,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return JSON.stringify(a) === JSON.stringify(b);
     }
 
-    function playNoteSound(midiNum) {
+    function playNoteSound(midiPitch) {
         if (oscillator) {
             oscillator.stop();
         }
@@ -423,7 +375,9 @@ document.addEventListener('DOMContentLoaded', () => {
         context = new (window.AudioContext || window.webkitAudioContext)();
         oscillator = context.createOscillator();
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(noteFrequencies[midiNum], context.currentTime);
+        const freq = midiToFrequency(midiPitch);
+        console.log(midiPitch, freq);
+        oscillator.frequency.setValueAtTime(freq, context.currentTime);
         oscillator.connect(context.destination);
         oscillator.start();
         setTimeout(() => {
@@ -474,7 +428,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showCorrectFingering() {
-        messageDisplay.textContent = currentNote + ' fingering: ' + noteFingerings[noteToMidi(currentNote)].join('-');
+        const vfkey = midiToVexFlow(currentNote, getAccidentalPreference(keySignature));
+        messageDisplay.textContent = vfkey + ' fingering is ' + noteFingerings[currentNote].join('-');
         setTimeout(() => {
             messageDisplay.textContent = '';
         }, 3000);

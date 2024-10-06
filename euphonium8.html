@@ -39,20 +39,38 @@
     <div id="controls">
         <label for="keySignature">Key Signature:</label>
         <select id="keySignature">
-            <option value="C">C Major / A minor</option>
-            <option value="F">F Major / D minor</option>
-            <option value="Bb">Bb Major / G minor</option>
-            <option value="Eb">Eb Major / C minor</option>
-            <option value="Ab">Ab Major / F minor</option>
-            <option value="Db">Db Major / Bb minor</option>
+            <optgroup label="Special">
+                <option value="C">C Major / A minor</option>
+                <option value="chromatic">Chromatic</option>
+            </optgroup>
+            <optgroup label="Flats">
+                <option value="F">F Major / D minor</option>
+                <option value="Bb">Bb Major / G minor</option>
+                <option value="Eb">Eb Major / C minor</option>
+                <option value="Ab">Ab Major / F minor</option>
+                <option value="Db">Db Major / Bb minor</option>
+                <option value="Gb">Gb Major / Eb minor</option>
+                <option value="Cb">Cb Major / Ab minor</option>
+                <option value="Fb">Fb Major / Fb minor</option>
+            </optgroup>
+            <optgroup label="Sharps">
+                <option value="G">G Major / E minor</option>
+                <option value="D">D Major / B minor</option>
+                <option value="A">A Major / F# minor</option>
+                <option value="E">E Major / C# minor</option>
+                <option value="B">B Major / G# minor</option>
+                <option value="F#">F# Major / D# minor</option>
+                <option value="C#">C# Major / A# minor</option>
+                <option value="G#">G# Major / E# minor</option>
+            </optgroup>
         </select>
 
         <label for="noteRange">Note Range:</label>
         <select id="noteRange">
-            <option value="low">Low (F2 to Bb2)</option>
-            <option value="mid">Middle (C3 to Bb3)</option>
-            <option value="high">High (C4 to Bb4)</option>
-            <option value="full">Full Range (F2 to Bb4)</option>
+            <option value="novice">Novice (Bb2 to Bb3)</option>
+            <option value="beginner">Beginner (G2 to D4)</option>
+            <option value="intermediate">Intermediate (Eb2 to F4)</option>
+            <option value="advanced">Advanced (F2 to Bb4)</option>
         </select>
 
         <button id="startButton">Start</button>
